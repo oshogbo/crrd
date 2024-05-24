@@ -41,8 +41,8 @@ dbrrd_print(dbrrd_t *db)
 	rrd_print(&db->dbr_months);
 }
 
-#define CCRD_ASSERT_EQ(db, time, txg) do { 					\
-		if (dbrrd_query(db, time) != txg) {                     	\
+#define CCRD_ASSERT_EQ(db, time, txg) do {					\
+		if (dbrrd_query(db, time) != txg) {				\
 			printf("%d failed: query(%lld) %d != %d\n",		\
 			    __LINE__, time, dbrrd_query(db, time), txg);	\
 			dbrrd_print(db);					\
