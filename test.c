@@ -104,10 +104,12 @@ int
 main(int ac, char **av)
 {
 	printf("crrd - C RRD Database\n");
+
 	lineral_test();
 	days_test();
 	month_test();
-	printf("test passed");
+
+	printf("test passed\n");
 
 	return (0);
 }
