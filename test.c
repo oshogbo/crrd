@@ -100,6 +100,18 @@ month_test()
 	CCRD_ASSERT_EQ(&db, SEC2HR(2 * 60 * 3600 * 30), 30);
 }
 
+void
+prefirst_test()
+{
+	dbrrd_t db = {0};
+
+	for (size_t i = 0; i < 512; i++) {
+		dbrrd_add(&db, 5 * (i + 1), i);
+	}
+
+	CCRD_ASSERT_EQ(&db, 1, 0);
+}
+
 int
 main(int ac, char **av)
 {
@@ -108,6 +120,7 @@ main(int ac, char **av)
 	lineral_test();
 	days_test();
 	month_test();
+	prefirst_test();
 
 	printf("test passed\n");
 
