@@ -153,6 +153,9 @@ rrd_query(rrd_t *rrd, hrtime_t tv)
 			data = cur;
 			mindiff = rrd_abs(tv - cur->rrdd_time);
 		}
+
+		if (cur->rrdd_time > tv)
+			break;
 	}
 
 	return (data);
