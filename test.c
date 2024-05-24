@@ -112,6 +112,18 @@ prefirst_test()
 	CCRD_ASSERT_EQ(&db, 1, 0);
 }
 
+void
+postlast_test()
+{
+	dbrrd_t db = {0};
+
+	for (size_t i = 0; i < 512; i++) {
+		dbrrd_add(&db, 5 * (i + 1), i);
+	}
+
+	CCRD_ASSERT_EQ(&db, 5120, 511);
+}
+
 int
 main(int ac, char **av)
 {
@@ -121,6 +133,7 @@ main(int ac, char **av)
 	days_test();
 	month_test();
 	prefirst_test();
+	postlast_test();
 
 	printf("test passed\n");
 
