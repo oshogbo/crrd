@@ -137,10 +137,9 @@ dbrrd_add(dbrrd_t *db, hrtime_t time, uint64_t txg)
  *          although the data is small, and the routine
  *          isn't used so often that we stick to simple methods.
  */
-const rrd_data_t *
+static const rrd_data_t *
 rrd_query(rrd_t *rrd, hrtime_t tv, dbrrd_rounding_t rounding)
 {
-	hrtime_t mindiff;
 	const rrd_data_t *data;
 
 	data = NULL;
@@ -164,7 +163,7 @@ rrd_query(rrd_t *rrd, hrtime_t tv, dbrrd_rounding_t rounding)
 	return (data);
 }
 
-const rrd_data_t *
+static const rrd_data_t *
 dbrrd_min(const rrd_data_t *r1, const rrd_data_t *r2)
 {
 	if (r1 == NULL)
@@ -175,7 +174,7 @@ dbrrd_min(const rrd_data_t *r1, const rrd_data_t *r2)
 	return (r1->rrdd_txg < r2->rrdd_txg ? r1 : r2);
 }
 
-const rrd_data_t *
+static const rrd_data_t *
 dbrrd_max(const rrd_data_t *r1, const rrd_data_t *r2)
 {
 	if (r1 == NULL)
@@ -191,6 +190,7 @@ dbrrd_query(dbrrd_t *r, hrtime_t tv, dbrrd_rounding_t rounding)
 {
 	const rrd_data_t *data, *dm, *dd, *dy;
 
+	data = NULL;
 	dm = rrd_query(&r->dbr_minutes, tv, rounding);
 	dd = rrd_query(&r->dbr_days, tv, rounding);
 	dy = rrd_query(&r->dbr_months, tv, rounding);
