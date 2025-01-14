@@ -41,10 +41,10 @@ dbrrd_print(dbrrd_t *db)
 	rrd_print(&db->dbr_months);
 }
 
-#define CCRD_ASSERT_EQ(db, time, txg) do {					\
-		if (dbrrd_query(db, time) != txg) {				\
+#define CCRD_ASSERT_EQ(db, time, rounding, txg) do {					\
+		if (dbrrd_query(db, time, rounding) != txg) {			\
 			printf("%d failed: query(%lld) %lu != %lu\n",		\
-			    __LINE__, time, dbrrd_query(db, time), txg);	\
+			    __LINE__, time, dbrrd_query(db, time, rounding), txg);	\
 			dbrrd_print(db);					\
 			exit(1);						\
 		}								\
@@ -68,11 +68,15 @@ lineral_test()
 
 	for (size_t i = 0; i < sizeof(test) / sizeof(test[0]); i++) {
 		dbrrd_add(&db, test[i].time, test[i].txg);
-		CCRD_ASSERT_EQ(&db, test[i].time, test[i].txg);
+		CCRD_ASSERT_EQ(&db, test[i].time, DBRRD_FLOOR, test[i].txg);
 	}
 
 	for (size_t i = 0; i < sizeof(test) / sizeof(test[0]); i++) {
-		CCRD_ASSERT_EQ(&db, test[i].time, test[i].txg);
+		CCRD_ASSERT_EQ(&db, test[i].time, DBRRD_FLOOR, test[i].txg);
+	}
+
+	for (size_t i = 0; i < sizeof(test) / sizeof(test[0]); i++) {
+		CCRD_ASSERT_EQ(&db, test[i].time, DBRRD_CEILING, test[i].txg);
 	}
 }
 
@@ -85,7 +89,7 @@ days_test()
 		dbrrd_add(&db, SEC2HR(5 * i * 60 + 60 * 3600), i);
 	}
 
-	CCRD_ASSERT_EQ(&db, SEC2HR(5 * 60 + 60 * 3600), (uint64_t)0U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(5 * 60 + 60 * 3600), DBRRD_FLOOR, (uint64_t)0U);
 }
 
 void
@@ -94,10 +98,18 @@ month_test()
 	dbrrd_t db = {0};
 
 	for (size_t i = 0; i < 1024; i++) {
-		dbrrd_add(&db, SEC2HR(i * 60 * 3660 + 60 * 3600 * 30), i);
+		dbrrd_add(&db, SEC2HR(i * 60 * 3660 + 60 * 3600 * 30), i + 1);
 	}
 
-	CCRD_ASSERT_EQ(&db, SEC2HR(2 * 60 * 3600 * 30), (uint64_t)30U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(3600 * 30), DBRRD_FLOOR, (uint64_t)0U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(60 * 3600 * 30), DBRRD_FLOOR, (uint64_t)1U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(60 * 3600 * 30), DBRRD_CEILING, (uint64_t)1U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(60 * 60 * 3660 + 60 * 3600 * 30), DBRRD_FLOOR, (uint64_t)61U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(60 * 60 * 3660 + 60 * 3600 * 30), DBRRD_CEILING, (uint64_t)61U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(1023 * 60 * 3660 + 60 * 3600 * 30), DBRRD_FLOOR, (uint64_t)1024U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(1023 * 60 * 3660 + 60 * 3600 * 30), DBRRD_CEILING, (uint64_t)1024U);
+	CCRD_ASSERT_EQ(&db, SEC2HR(2000 * 60 * 3660 + 60 * 3600 * 30), DBRRD_FLOOR, (uint64_t)1024);
+	CCRD_ASSERT_EQ(&db, SEC2HR(2000 * 60 * 3660 + 60 * 3600 * 30), DBRRD_CEILING, (uint64_t)0);
 }
 
 void
@@ -105,11 +117,12 @@ prefirst_test()
 {
 	dbrrd_t db = {0};
 
-	for (size_t i = 0; i < 512; i++) {
-		dbrrd_add(&db, 5 * (i + 1), i);
+	for (size_t i = 1; i < 512; i++) {
+		dbrrd_add(&db, 5 * i, i);
 	}
 
-	CCRD_ASSERT_EQ(&db, (hrtime_t)1, (uint64_t)0U);
+	CCRD_ASSERT_EQ(&db, (hrtime_t)1, DBRRD_FLOOR, (uint64_t)0U);
+	CCRD_ASSERT_EQ(&db, (hrtime_t)1, DBRRD_CEILING, (uint64_t)1U);
 }
 
 void
@@ -118,10 +131,11 @@ postlast_test()
 	dbrrd_t db = {0};
 
 	for (size_t i = 0; i < 512; i++) {
-		dbrrd_add(&db, 5 * (i + 1), i);
+		dbrrd_add(&db, 5 * i, i);
 	}
 
-	CCRD_ASSERT_EQ(&db, (hrtime_t)5120, (uint64_t)511U);
+	CCRD_ASSERT_EQ(&db, (hrtime_t)5120, DBRRD_FLOOR, (uint64_t)511U);
+	CCRD_ASSERT_EQ(&db, (hrtime_t)5120, DBRRD_CEILING, (uint64_t)0U);
 }
 
 int

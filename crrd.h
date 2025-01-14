@@ -39,6 +39,11 @@ typedef longlong_t hrtime_t;
 
 #define	RRD_MAX_ENTRIES	512
 
+typedef enum {
+	DBRRD_FLOOR,
+	DBRRD_CEILING
+} dbrrd_rounding_t;
+
 typedef struct {
 	hrtime_t	rrdd_time;
 	uint64_t	rrdd_txg;
@@ -69,6 +74,6 @@ uint64_t rrd_get(rrd_t *rrd, size_t i);
 void rrd_add(rrd_t *rrd, hrtime_t time, uint64_t txg);
 
 void dbrrd_add(dbrrd_t *db, hrtime_t time, uint64_t txg);
-uint64_t dbrrd_query(dbrrd_t *r, hrtime_t tv);
+uint64_t dbrrd_query(dbrrd_t *r, hrtime_t tv, dbrrd_rounding_t rouding);
 
 #endif

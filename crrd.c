@@ -42,8 +42,6 @@
 #include <sys/crrd.h>
 #endif
 
-#define rrd_abs(x)	((x) < 0 ? -(x) : (x))
-
 const rrd_data_t *
 rrd_tail_entry(rrd_t *rrd)
 {
@@ -140,7 +138,7 @@ dbrrd_add(dbrrd_t *db, hrtime_t time, uint64_t txg)
  *          isn't used so often that we stick to simple methods.
  */
 const rrd_data_t *
-rrd_query(rrd_t *rrd, hrtime_t tv)
+rrd_query(rrd_t *rrd, hrtime_t tv, dbrrd_rounding_t rounding)
 {
 	hrtime_t mindiff;
 	const rrd_data_t *data;
@@ -149,39 +147,58 @@ rrd_query(rrd_t *rrd, hrtime_t tv)
 	for (size_t i = 0; i < rrd_len(rrd); i++) {
 		const rrd_data_t *cur = rrd_entry(rrd, i);
 
-		if (data == NULL || mindiff > rrd_abs(tv - cur->rrdd_time)) {
+		if (rounding == DBRRD_FLOOR) {
+			if (tv < cur->rrdd_time) {
+				break;
+			}
 			data = cur;
-			mindiff = rrd_abs(tv - cur->rrdd_time);
+		} else {
+			/* DBRRD_CEILING */
+			if (tv <= cur->rrdd_time) {
+				data = cur;
+				break;
+			}
 		}
-
-		if (cur->rrdd_time > tv)
-			break;
 	}
 
 	return (data);
 }
 
+const rrd_data_t *
+dbrrd_min(const rrd_data_t *r1, const rrd_data_t *r2)
+{
+	if (r1 == NULL)
+		return (r2);
+	if (r2 == NULL)
+		return (r1);
+
+	return (r1->rrdd_txg < r2->rrdd_txg ? r1 : r2);
+}
+
+const rrd_data_t *
+dbrrd_max(const rrd_data_t *r1, const rrd_data_t *r2)
+{
+	if (r1 == NULL)
+		return (r2);
+	if (r2 == NULL)
+		return (r1);
+
+	return (r1->rrdd_txg > r2->rrdd_txg ? r1 : r2);
+}
+
 uint64_t
-dbrrd_query(dbrrd_t *r, hrtime_t tv)
+dbrrd_query(dbrrd_t *r, hrtime_t tv, dbrrd_rounding_t rounding)
 {
 	const rrd_data_t *data, *dm, *dd, *dy;
 
-	dm = rrd_query(&r->dbr_minutes, tv);
-	if (dm != NULL)
-		data = dm;
-	dd = rrd_query(&r->dbr_days, tv);
-	if (dd != NULL) {
-		if (data == NULL ||
-		    rrd_abs(data->rrdd_time - tv) > rrd_abs(dd->rrdd_time - tv)) {
-			data = dd;
-		}
-	}
-	dy = rrd_query(&r->dbr_months, tv);
-	if (dy != NULL) {
-		if (data == NULL ||
-		    rrd_abs(data->rrdd_time - tv) > rrd_abs(dy->rrdd_time - tv)) {
-			data = dy;
-		}
+	dm = rrd_query(&r->dbr_minutes, tv, rounding);
+	dd = rrd_query(&r->dbr_days, tv, rounding);
+	dy = rrd_query(&r->dbr_months, tv, rounding);
+
+	if (rounding == DBRRD_FLOOR) {
+		data = dbrrd_max(dbrrd_min(dd, dm), dy);
+	} else {
+		data = dbrrd_min(dbrrd_min(dd, dm), dy);
 	}
 
 	return (data == NULL ? 0 : data->rrdd_txg);
