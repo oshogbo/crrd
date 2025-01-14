@@ -43,7 +43,7 @@ dbrrd_print(dbrrd_t *db)
 
 #define CCRD_ASSERT_EQ(db, time, txg) do {					\
 		if (dbrrd_query(db, time) != txg) {				\
-			printf("%d failed: query(%lld) %d != %d\n",		\
+			printf("%d failed: query(%lld) %lu != %lu\n",		\
 			    __LINE__, time, dbrrd_query(db, time), txg);	\
 			dbrrd_print(db);					\
 			exit(1);						\
@@ -85,7 +85,7 @@ days_test()
 		dbrrd_add(&db, SEC2HR(5 * i * 60 + 60 * 3600), i);
 	}
 
-	CCRD_ASSERT_EQ(&db, SEC2HR(5 * 60 + 60 * 3600), 0);
+	CCRD_ASSERT_EQ(&db, SEC2HR(5 * 60 + 60 * 3600), (uint64_t)0U);
 }
 
 void
@@ -97,7 +97,7 @@ month_test()
 		dbrrd_add(&db, SEC2HR(i * 60 * 3660 + 60 * 3600 * 30), i);
 	}
 
-	CCRD_ASSERT_EQ(&db, SEC2HR(2 * 60 * 3600 * 30), 30);
+	CCRD_ASSERT_EQ(&db, SEC2HR(2 * 60 * 3600 * 30), (uint64_t)30U);
 }
 
 void
@@ -109,7 +109,7 @@ prefirst_test()
 		dbrrd_add(&db, 5 * (i + 1), i);
 	}
 
-	CCRD_ASSERT_EQ(&db, 1, 0);
+	CCRD_ASSERT_EQ(&db, (hrtime_t)1, (uint64_t)0U);
 }
 
 void
@@ -121,7 +121,7 @@ postlast_test()
 		dbrrd_add(&db, 5 * (i + 1), i);
 	}
 
-	CCRD_ASSERT_EQ(&db, 5120, 511);
+	CCRD_ASSERT_EQ(&db, (hrtime_t)5120, (uint64_t)511U);
 }
 
 int

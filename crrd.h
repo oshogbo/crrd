@@ -45,8 +45,8 @@ typedef struct {
 } rrd_data_t;
 
 typedef struct {
-	int		rrd_head;	/* head (beginning) */
-	int		rrd_tail;	/* tail (end) */
+	size_t		rrd_head;	/* head (beginning) */
+	size_t		rrd_tail;	/* tail (end) */
 	size_t		rrd_length;
 
 	rrd_data_t	rrd_entries[RRD_MAX_ENTRIES];
