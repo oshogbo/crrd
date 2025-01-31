@@ -50,9 +50,9 @@ typedef struct {
 } rrd_data_t;
 
 typedef struct {
-	size_t		rrd_head;	/* head (beginning) */
-	size_t		rrd_tail;	/* tail (end) */
-	size_t		rrd_length;
+	uint64_t	rrd_head;	/* head (beginning) */
+	uint64_t	rrd_tail;	/* tail (end) */
+	uint64_t	rrd_length;
 
 	rrd_data_t	rrd_entries[RRD_MAX_ENTRIES];
 } rrd_t;
@@ -72,6 +72,8 @@ uint64_t rrd_tail(rrd_t *rrd);
 uint64_t rrd_get(rrd_t *rrd, size_t i);
 
 void rrd_add(rrd_t *rrd, hrtime_t time, uint64_t txg);
+void rrd_pack(rrd_t *rrd, uint8_t *buffer);
+void rrd_ntoh(rrd_t *rrd);
 
 void dbrrd_add(dbrrd_t *db, hrtime_t time, uint64_t txg);
 uint64_t dbrrd_query(dbrrd_t *r, hrtime_t tv, dbrrd_rounding_t rouding);

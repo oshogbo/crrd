@@ -28,6 +28,8 @@
  */
 
 #ifdef TESTING
+#include <arpa/inet.h>
+
 #include <stddef.h>
 #include <string.h>
 #include <stdlib.h>
@@ -36,6 +38,9 @@
 #include "crrd.h"
 
 #define SEC2NSEC(n) (n * 1000LL * 1000LL * 1000LL)
+
+#define htonll(x) ((((uint64_t)htonl((x) & 0xFFFFFFFF)) << 32) | htonl((x) >> 32))
+#define ntohll(x) ((((uint64_t)ntohl((x) & 0xFFFFFFFF)) << 32) | ntohl((x) >> 32))
 
 #else
 #include <sys/zfs_context.h>
@@ -203,3 +208,38 @@ dbrrd_query(dbrrd_t *r, hrtime_t tv, dbrrd_rounding_t rounding)
 
 	return (data == NULL ? 0 : data->rrdd_txg);
 }
+
+void
+rrd_pack(rrd_t *rrd, uint8_t *buffer)
+{
+	rrd_t *ptr = (rrd_t*)buffer;
+
+	memset(buffer, 0, sizeof(*ptr));
+
+	ptr->rrd_head = htonll(rrd->rrd_head);
+	ptr->rrd_tail = htonll(rrd->rrd_tail);
+	ptr->rrd_length = htonll(rrd->rrd_length);
+
+	for (size_t i = 0; i < RRD_MAX_ENTRIES; i++) {
+		ptr->rrd_entries[i].rrdd_time =
+		    htonll(rrd->rrd_entries[i].rrdd_time);
+		ptr->rrd_entries[i].rrdd_txg =
+		    htonll(rrd->rrd_entries[i].rrdd_txg);
+	}
+}
+
+void
+rrd_ntoh(rrd_t *rrd)
+{
+	rrd->rrd_head = ntohll(rrd->rrd_head);
+	rrd->rrd_tail = ntohll(rrd->rrd_tail);
+	rrd->rrd_length = ntohll(rrd->rrd_length);
+
+	for (size_t i = 0; i < RRD_MAX_ENTRIES; i++) {
+		rrd->rrd_entries[i].rrdd_time =
+		    ntohll(rrd->rrd_entries[i].rrdd_time);
+		rrd->rrd_entries[i].rrdd_txg =
+		    ntohll(rrd->rrd_entries[i].rrdd_txg);
+	}
+}
+

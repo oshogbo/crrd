@@ -2,9 +2,10 @@
  * Test functions for crrd
  */
 
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdbool.h>
+#include <string.h>
 
 #include "crrd.h"
 
@@ -138,6 +139,35 @@ postlast_test()
 	CCRD_ASSERT_EQ(&db, (hrtime_t)5120, DBRRD_CEILING, (uint64_t)0U);
 }
 
+void
+pack_test()
+{
+	dbrrd_t db = {0};
+	dbrrd_t newdb = {0};
+	uint8_t buf[sizeof(rrd_t)];
+
+	for (size_t i = 0; i < 1024; i++) {
+		dbrrd_add(&db, SEC2HR(5 * i * 60 + 60 * 3600), i);
+	}
+
+	rrd_pack(&db.dbr_minutes, buf);
+	memcpy(&newdb.dbr_minutes, &buf, sizeof(rrd_t));
+	rrd_ntoh(&newdb.dbr_minutes);
+
+	rrd_pack(&db.dbr_days, buf);
+	memcpy(&newdb.dbr_days, buf, sizeof(rrd_t));
+	rrd_ntoh(&newdb.dbr_days);
+
+	rrd_pack(&db.dbr_months, buf);
+	memcpy(&newdb.dbr_months, buf, sizeof(rrd_t));
+	rrd_ntoh(&newdb.dbr_months);
+
+	if (memcmp(&db, &newdb, sizeof(db)) != 0) {
+		printf("unable to pack/unpack dbrrd");
+		exit(1);
+	}
+}
+
 int
 main(int ac, char **av)
 {
@@ -148,6 +178,7 @@ main(int ac, char **av)
 	month_test();
 	prefirst_test();
 	postlast_test();
+	pack_test();
 
 	printf("test passed\n");
 
