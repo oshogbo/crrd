@@ -63,7 +63,6 @@ typedef struct {
 	rrd_t		dbr_months;
 } dbrrd_t;
 
-rrd_t *rrd_create(void);
 size_t rrd_len(rrd_t *rrd);
 
 const rrd_data_t *rrd_entry(rrd_t *r, size_t i);
